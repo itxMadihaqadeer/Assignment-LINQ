@@ -1,0 +1,40 @@
+﻿@page "/enrolledpage"
+@using DbCwithLINKQ.Model;
+@inject AppDbContext DbContext
+
+<h3>Enrolled List</h3>
+<ul>
+    @foreach (var item in enrolled)
+    {
+        <li>Class ID: @item.Cid - Student ID: @item.Sid</li>
+    }
+</ul>
+
+<h3>Query E Results</h3>
+<ul>
+    @foreach (var result in queryEResults)
+    {
+        <li>Student Name: @result.StudentName</li>
+    }
+</ul>
+
+@code {
+    private List<Enrolled> enrolled = new List<Enrolled>();
+    private List<dynamic> queryEResults = new List<dynamic>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        // Execute LINQ queries specific to the EnrolledPage
+        QueryE();
+    }
+
+    private void QueryE()
+    {
+        queryEResults = (from s in DbContext.Students
+                         join e in DbContext.Enrolled on s.Sid equals e.Sid
+                         join f in DbContext.Faculty on e.Cid equals f.Fid
+                         where f.DeptId == "Computer Science"
+                         select new { StudentName = s.Sname }).ToList();
+    }
+}

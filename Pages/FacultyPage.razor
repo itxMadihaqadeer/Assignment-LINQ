@@ -1,0 +1,40 @@
+﻿@page "/facultypage"
+@using DbCwithLINKQ.Model;
+@inject AppDbContext DbContext
+
+<h3>Faculty List</h3>
+<ul>
+    @foreach (var item in faculties)
+    {
+        <li>@item.Fname</li>
+    }
+</ul>
+
+<h3>Query D Results</h3>
+<ul>
+    @foreach (var result in queryDResults)
+    {
+        <li>Faculty Name: @result.FacultyName - Total Classes: @result.TotalClasses</li>
+    }
+</ul>
+
+@code {
+    private List<Faculty> faculties = new List<Faculty>();
+    private List<dynamic> queryDResults = new List<dynamic>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        // Execute LINQ queries specific to the FacultyPage
+        QueryD();
+    }
+
+    private void QueryD()
+    {
+        queryDResults = (from f in DbContext.Faculty
+                         join c in DbContext.Classes on f.Fid equals c.Fid
+                         group c by new { f.Fid, f.Fname } into g
+                         orderby g.Count() descending
+                         select new { FacultyName = g.Key.Fname, TotalClasses = g.Count() }).ToList();
+    }
+}
