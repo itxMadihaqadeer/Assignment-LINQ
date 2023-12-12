@@ -1,0 +1,68 @@
+﻿@page "/studentpage"
+@using DbCwithLINKQ.Model;
+@inject AppDbContext DbContext
+
+<EditForm Model="@student" OnValidSubmit="@HandleValidSubmit">
+    <!-- ... Form code ... -->
+</EditForm>
+
+<h3>Student List</h3>
+<ul>
+    @foreach (var item in students)
+    {
+        <li>@item.Sname - @item.Major</li>
+    }
+</ul>
+
+<h3>Query A Results</h3>
+<ul>
+    @foreach (var result in queryAResults)
+    {
+        <li>@result.ClassName - Room: @result.RoomNumber</li>
+    }
+</ul>
+
+<h3>Query B Results</h3>
+<ul>
+    @foreach (var result in queryBResults)
+    {
+        <li>Student ID: @result.StudentId - Major: @result.Major</li>
+    }
+</ul>
+
+@code {
+    private Student student = new Student();
+    private List<Student> students = new List<Student>();
+    private List<dynamic> queryAResults = new List<dynamic>();
+    private List<dynamic> queryBResults = new List<dynamic>();
+
+    private void HandleValidSubmit()
+    {
+        students.Add(student);
+        // Save to the database if needed
+        student = new Student(); // Reset the form
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        // Execute LINQ queries specific to the StudentPage
+        QueryA();
+        QueryB();
+    }
+
+    private void QueryA()
+    {
+        queryAResults = (from c in DbContext.Classes
+                         where DbContext.Enrolled.Count(e => e.Cid == c.Cid) > 100
+                         select new { ClassName = c.Name, RoomNumber = c.RoomNumber }).ToList();
+    }
+
+    private void QueryB()
+    {
+        queryBResults = (from s in DbContext.Students
+                         where DbContext.Enrolled
+                             .All(e => e.Sid == s.Sid && DbContext.Class.All(c => c.Fid != 22 && c.Cid == e.Cid))
+                         select new { StudentId = s.Sid, Major = s.Major }).ToList();
+    }
+}

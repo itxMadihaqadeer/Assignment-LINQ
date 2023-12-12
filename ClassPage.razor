@@ -1,0 +1,58 @@
+﻿@page "/classpage"
+@using DbCwithLINKQ.Model;
+@inject AppDbContext DbContext
+
+<h3>Class List</h3>
+<ul>
+    @foreach (var item in classes)
+    {
+        <li>@item.Name - Room: @item.RoomNumber</li>
+    }
+</ul>
+
+<h3>Query A Results</h3>
+<ul>
+    @foreach (var result in queryAResults)
+    {
+        <li>Student Name: @result.StudentName</li>
+    }
+</ul>
+
+<h3>Query C Results</h3>
+<ul>
+    @foreach (var result in queryCResults)
+    {
+        <li>Student Name: @result.StudentName - Enrolled Classes: @result.NumberOfClasses</li>
+    }
+</ul>
+
+@code {
+    private List<Class> classes = new List<Class>();
+    private List<dynamic> queryAResults = new List<dynamic>();
+    private List<dynamic> queryCResults = new List<dynamic>();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        // Execute LINQ queries specific to the ClassPage
+        QueryA();
+        QueryC();
+    }
+
+    private void QueryA()
+    {
+        queryAResults = (from s in DbContext.Student
+                         join e in DbContext.Enrolled on s.Sid equals e.Sid
+                         where DbContext.Marks.All(m => m.Cid == e.Cid && m.Mark == null)
+                         select new { StudentName = s.Sname }).ToList();
+    }
+
+    private void QueryC()
+    {
+        queryCResults = (from s in DbContext.Students
+                         join e in DbContext.Enrolled on s.Sid equals e.Sid
+                         group s by new { s.Sid, s.Sname } into g
+                         where g.Count() > 2
+                         select new { StudentName = g.Key.Sname, NumberOfClasses = g.Count() }).ToList();
+    }
+}
